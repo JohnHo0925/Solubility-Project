@@ -2,12 +2,15 @@ from __future__ import print_function
 from rdkit import Chem
 import numpy as np
 import torch
+import pdb
+
 smiles = 'CC(NC1=NN=C(S1)[S](N)(=O)=O)=O'
 mol = Chem.MolFromSmiles(smiles)
 f_atoms = []  # mapping from atom index to atom features
 f_bonds = []  # mapping from bond index to concat(in_atom, bond) features
 a2b = []  # mapping from atom index to incoming bond indices
 b2a = []  # mapping from bond index to the index of the atom the bond is coming from```
+b2revb = []
 max_num = 115
 atomic_num = list(range(max_num))
 degree = [0, 1, 2, 3, 4, 5]
@@ -24,7 +27,7 @@ hybridization = [
     ]
 bond_type = [
             Chem.rdchem.BondType.SINGLE,
-          	Chem.rdchem.BondType.DOUBLE,
+            Chem.rdchem.BondType.DOUBLE,
             Chem.rdchem.BondType.TRIPLE,
             Chem.rdchem.BondType.AROMATIC,
         ]
@@ -37,85 +40,43 @@ def one_hot(val, list1):
         index = -1
     encoding[index] = 1
     return encoding
- 
-#atomfeature = []
-#encoding_num = one_hot(atom.GetAtomicNum(),atomic_num)
-#encoding_num = [0] * (len(atomic_num) + 1)    
 
+def one_hotyk(val):
+    if val is True:
+        encoding = [1,0]
+    else:
+        encoding= [0,1]
+    return encoding
 
 def atom_features(atom):
-    encoding_num = [0] * (len(atomic_num) + 1)
-    if atom.GetAtomicNum() in atomic_num:
-    	index = atomic_num.index(atom.GetAtomicNum())
-    else:
-    	index = -1
-    encoding_num[index] = 1
-   
-    encoding_degree = [0] * (len(degree) + 1) 
-    if atom.GetTotalDegree() in degree:
-    	index = degree.index(atom.GetTotalDegree())
-    else:
-    	index = -1
-    encoding_degree[index] = 1   
-    
-    encoding_charge = [0] * (len(formal_charge) + 1)
-    if atom.GetFormalCharge() in formal_charge:
-    	index = formal_charge.index(atom.GetFormalCharge())
-    else:
-    	index = -1
-    encoding_charge[index] = 1 
-    
-    encoding_chiral = [0] * (len(chiral_tag) + 1)
-    if atom.GetChiralTag() in chiral_tag:
-    	index = chiral_tag.index(atom.GetChiralTag())
-    else:
-    	index = -1
-    encoding_chiral[index] = 1 
-    
-    encoding_Hs = [0] * (len(num_Hs) + 1)
-    if atom.GetTotalNumHs() in num_Hs:
-    	index = num_Hs.index(atom.GetTotalNumHs())
-    else:
-    	index = -1
-    encoding_Hs[index] = 1 
-    
-    encoding_hybrid = [0] * (len(hybridization) + 1)
-    if atom.GetHybridization() in hybridization:
-    	index = hybridization.index(atom.GetHybridization())
-    else:
-    	index = -1
-    
-    encoding_hybrid[index] = 1
-    if atom.GetIsAromatic() is True:
-    	encoding_aromatic = [1,0]
-    else:
-    	encoding_aromatic = [0,1]
-    
+    encoding_num = one_hot(atom.GetAtomicNum(), atomic_num)
+
+    encoding_degree = one_hot(atom.GetTotalDegree(), degree)
+
+    encoding_charge = one_hot(atom.GetFormalCharge(), formal_charge)
+
+    encoding_chiral = one_hot(atom.GetChiralTag(), chiral_tag)
+
+    encoding_Hs = one_hot(atom.GetTotalNumHs(), num_Hs)
+
+    encoding_hybrid = one_hot(atom.GetTotalNumHs(), hybridization)
+
+    encoding_aromatic = one_hotyk(atom.GetIsAromatic())
+
     atom_feature = encoding_num + encoding_degree + encoding_charge + encoding_chiral + encoding_Hs + encoding_hybrid + encoding_aromatic
     return atom_feature
-
+      
 def bond_features(bond):
-    
-    encoding_bondtype = [0] * (len(bond_type) + 1)
-    
-    if bond.GetBondType() in bond_type:
-    	index = bond_type.index(bond.GetBondType())
-    else:
-    	index = -1
-    encoding_bondtype[index] =  1
-   
-    if bond.GetIsConjugated() is True:
-    	encoding_conjugation = [1,0]
-    else:
-    	encoding_conjugation = [0,1]
-   
-    if bond.GetStereo() is True:
-    	encoding_stereo = [1,0]
-    else:
-        encoding_stereo = [0,1]
-    
+
+    encoding_bondtype = one_hot(bond.GetBondType(), bond_type)
+
+    encoding_conjugation = one_hotyk(bond.GetIsConjugated())
+
+    encoding_stereo = one_hotyk(bond.GetStereo())
+
     bond_feature = encoding_bondtype + encoding_conjugation + encoding_stereo
     return bond_feature
+
 
 for x in range(mol.GetNumAtoms()):
     a2b.append([])
@@ -125,6 +86,7 @@ for g, atom in enumerate(mol.GetAtoms()):
 f_atoms = [f_atoms[g] for g in range(mol.GetNumAtoms())]
 
 bond_index = 1
+
 for x1 in range(mol.GetNumAtoms()):
     for x2 in range(x1 + 1, mol.GetNumAtoms()):
         bond = mol.GetBondBetweenAtoms(x1, x2)
@@ -138,36 +100,49 @@ for x1 in range(mol.GetNumAtoms()):
         f_bonds.append(f_atoms[x2] + f_bond)
 
         y1 = bond_index 
-       	y2 = y1 + 1
+        y2 = y1 + 1
 
         a2b[x1].append(y1)
         a2b[x2].append(y2)
 
         b2a.append(x1)
-       	b2a.append(x2)
+        b2a.append(x2)
         bond_index += 2
+b = 0
 
 
+for x in range(int(len(f_bonds)/2)):
+    a = b+1
+    b2revb.append(a)
+    b2revb.append(b)
+    b += 2
 
 f_atoms = torch.LongTensor(f_atoms)
 f_bonds = torch.LongTensor(f_bonds)
 b2a = torch.LongTensor(b2a)
 
 max1 = 0
+bond_sum = [0]* len(f_bonds[0])
+bond_sum = torch.LongTensor(bond_sum)
+
 for list2 in a2b:
-	if len(list2) > max1:
-		max1 = len(list2)
+    if len(list2) > max1:
+       max1 = len(list2)
+
 for i, list2 in enumerate(a2b):
-	if len(list2) < max1:
-		 a2b[i] = list2 + [0] * (max1-len(list2))
+    if len(list2) < max1:
+       a2b[i] = list2 + [0] * (max1-len(list2))
 
 a2b = torch.LongTensor(a2b)
 
-print(f_atoms)
-print(f_bonds)
-print(b2a)
-print(a2b)
+for c,vector in enumerate(f_bonds):
+    for d in a2b[b2a[c]]:
+        bond_sum = torch.add(f_bonds[d-1],bond_sum)
+    bond_sum = torch.add(bond_sum,f_bonds[b2revb[c]] * -1)
+    f_bonds[c] = vector + bond_sum
+
+gcn_input = torch.sum(f_bonds,dim=0)
+print(gcn_input)
 
 
-
- 
+ x
