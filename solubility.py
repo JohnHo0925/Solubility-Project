@@ -143,6 +143,3 @@ for c,vector in enumerate(f_bonds):
 
 gcn_input = torch.sum(f_bonds,dim=0)
 print(gcn_input)
-
-
- x
