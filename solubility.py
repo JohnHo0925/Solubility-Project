@@ -139,10 +139,9 @@ for c,vector in enumerate(f_bonds):
     for d in a2b[b2a[c]]:
         bond_sum = torch.add(f_bonds[d-1],bond_sum)
     bond_sum = torch.add(bond_sum,f_bonds[b2revb[c]] * -1)
-    f_bonds[c] = vector + bond_sum
+    print(f_bonds[d-1].shape)
+    print(bond_sum.shape)
+    f_bonds[c] = torch.cat((vector,bond_sum),dim=0)
 
 gcn_input = torch.sum(f_bonds,dim=0)
 print(gcn_input)
-
-
- x
