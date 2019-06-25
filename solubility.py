@@ -135,3 +135,14 @@ for i, list2 in enumerate(a2b):
 
 a2b = torch.LongTensor(a2b)
 
+<<<<<<< HEAD
+=======
+for c,vector in enumerate(f_bonds):
+    for d in a2b[b2a[c]]:
+        bond_sum = torch.add(f_bonds[d-1],bond_sum)
+    bond_sum = torch.add(bond_sum,f_bonds[b2revb[c]] * -1)
+    f_bonds[c] = vector + bond_sum
+
+gcn_input = torch.sum(f_bonds,dim=0)
+print(gcn_input)
+>>>>>>> c043a554f579d31ad142625053077757e270a828

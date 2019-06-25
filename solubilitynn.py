@@ -5,6 +5,7 @@ from chemprop.nn_utils import get_activation_function, initialize_weights
 
 class GCN(nn.Module):
     def __init__(self):
+        super(GCN, self).__init__()
         self.layer = nn.Linear(316, 158)
         self.activation = nn.reLU()
         self.dropout = nn.Dropout()
