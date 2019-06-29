@@ -20,12 +20,13 @@ model = GCN() # TODO
 
 loss_fn = torch.nn.MSELoss() # is this the correct loss that you want to use?
 
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0001) # feel free to play around with this
+optimizer = torch.optim.Adam(model.parameters(), lr=0.00001) # feel free to play around with this
 
 n_epochs = 10000 # or whatever
 batch_size = 1 # or whatever
 
 ctr = 0
+losses = []
 for epoch in range(n_epochs):
     if epoch % 100 == 0:
         print(epoch)
@@ -45,8 +46,15 @@ for epoch in range(n_epochs):
         outputs = model.forward(a2b, b2a, b2revb, f_bonds, f_atoms, bond_sum)
 
         loss = loss_fn(outputs, batch_y)
+        losses.append(loss)
+
         if ctr % 100 == 0:
             print("ctr =", ctr, "loss =", loss)
         ctr += 1
+        
         loss.backward()
         optimizer.step()
+
+def predict(smile):
+    a2b, b2a, b2revb, f_bonds, f_atoms, bond_sum = solubility_pp(smile)
+    return model.forward(a2b, b2a, b2revb, f_bonds, f_atoms, bond_sum)

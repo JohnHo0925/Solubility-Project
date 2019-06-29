@@ -123,7 +123,7 @@ def solubility_pp(smiles):
     b2revb = torch.LongTensor(b2revb)
 
     max1 = 0
-    bond_sum = [0]* len(f_bonds[0])
+    bond_sum = [0]* 158
     bond_sum = torch.LongTensor(bond_sum)
 
     for list2 in a2b:

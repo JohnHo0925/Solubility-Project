@@ -16,22 +16,21 @@ x_train, y_train = np.array(x_train).flatten(), np.array(y_train).flatten()
 def get_features(x):
     return [solubility_pp(e) for e in x]
 
-model = GCN() # TODO
+model = GCN() 
 
-loss_fn = torch.nn.MSELoss() # is this the correct loss that you want to use?
+loss_fn = torch.nn.MSELoss() \
 
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0001) # feel free to play around with this
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 
 n_epochs = 100 # or whatever
-batch_size = 1 # or whatever
+batch_size = 13 # or whatever
 
+ctr = 0
+losses = []
 for epoch in range(n_epochs):
     print(epoch)
-    # X is a torch Variable
     permutation = torch.randperm(int(x_train.size))
-
     for i in range(0, int(x_train.size), batch_size):
-        # print("i=", i)
         optimizer.zero_grad()
 
         indices = permutation[i:i+batch_size]
@@ -41,14 +40,22 @@ for epoch in range(n_epochs):
         f_bonds = []
         f_atoms = []
         bond_sum = []
-        # for x in get_features(x_train[indices]):
-        #     a2b.append(x[0]),b2a.append(x[1]),b2revb.append(x[2]),f_bonds.append(x[3]),f_atoms.append(x[4]),bond_sum.append(x[5])
-        a2b, b2a, b2revb, f_bonds, f_atoms, bond_sum = solubility_pp(x_train[indices][0])
+        for x in get_features(x_train[indices]):
+             a2b.append(x[0]),b2a.append(x[1]),b2revb.append(x[2]),f_bonds.append(x[3]),f_atoms.append(x[4]),bond_sum.append(x[5])
         batch_y = torch.FloatTensor(np.array([y_train[indices]]))
         
         outputs = model.forward(a2b, b2a, b2revb, f_bonds, f_atoms, bond_sum)
             # print(x_train[indices])
         loss = loss_fn(outputs, batch_y[0])
+        losses.append(loss)
+
+        if ctr % 100 == 0:
+            print("ctr =", ctr, "loss =", loss)
+        ctr += 1
 
         loss.backward()
         optimizer.step()
+
+def predict(smile):
+    a2b, b2a, b2revb, f_bonds, f_atoms, bond_sum = solubility_pp(smile)
+    return model.forward(a2b, b2a, b2revb, f_bonds, f_atoms, bond_sum)

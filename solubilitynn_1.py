@@ -9,7 +9,10 @@ class GCN(nn.Module):
         self.layer = nn.Linear(316, 158)
         self.activation = nn.ReLU()
         self.dropout = nn.Dropout()
-        self.layer1 = nn.Linear(158,1)
+        self.layer1 = nn.Linear(158,110)
+        self.layer2 = nn.Linear(110,70)
+        self.layer3 = nn.Linear(70,35)
+        self.layer4 = nn.Linear(35,1)
 
     def forward(self, a2b, b2a, b2revb, f_bonds, f_atoms, bond_sum):
         for c,vector in enumerate(f_bonds):
@@ -20,7 +23,14 @@ class GCN(nn.Module):
                 nf_bonds = self.layer(nf_bonds)
                 f_bonds[c] = nf_bonds
         molecule_pred = torch.sum(f_bonds,dim=0)
-        molecule_pred = self.activation(molecule_pred)
         molecule_pred = self.dropout(molecule_pred.float())
         molecule_pred = self.layer1(molecule_pred)
+        molecule_pred = self.dropout(molecule_pred.float())
+        molecule_pred = self.layer2(molecule_pred)
+        molecule_pred = self.activation(molecule_pred)
+        molecule_pred = self.dropout(molecule_pred.float())
+        molecule_pred = self.layer3(molecule_pred)
+        molecule_pred = self.activation(molecule_pred)
+        molecule_pred = self.dropout(molecule_pred.float())
+        molecule_pred = self.layer4(molecule_pred)
         return molecule_pred
