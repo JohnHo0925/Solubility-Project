@@ -6,7 +6,7 @@ import numpy as np
 from solubility import solubility_pp
 
 # torch.set_default_tensor_type('torch.LongTensor')
-df = pd.read_csv('delaney.csv')
+df = pd.read_csv('delaney_small.csv')
 y_all = df['logp']
 x_all = df.drop('logp',axis = 1)
 x_train, x_test, y_train, y_test = train_test_split(x_all, y_all)
@@ -22,12 +22,13 @@ loss_fn = torch.nn.MSELoss() # is this the correct loss that you want to use?
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0001) # feel free to play around with this
 
-n_epochs = 100 # or whatever
+n_epochs = 10000 # or whatever
 batch_size = 1 # or whatever
 
 ctr = 0
 for epoch in range(n_epochs):
-    print(epoch)
+    if epoch % 100 == 0:
+        print(epoch)
     # X is a torch Variable
     permutation = torch.randperm(int(x_train.size))
 
