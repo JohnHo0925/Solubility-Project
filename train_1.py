@@ -1,7 +1,7 @@
 import torch
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from solubilitynn import GCN
+from solubilitynn_1 import GCN
 import numpy as np
 from solubility import solubility_pp
 
@@ -25,6 +25,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.0001) # feel free to play 
 n_epochs = 100 # or whatever
 batch_size = 1 # or whatever
 
+ctr = 0
 for epoch in range(n_epochs):
     print(epoch)
     # X is a torch Variable
@@ -35,20 +36,16 @@ for epoch in range(n_epochs):
         optimizer.zero_grad()
 
         indices = permutation[i:i+batch_size]
-        a2b = []
-        b2a = []
-        b2revb = []
-        f_bonds = []
-        f_atoms = []
-        bond_sum = []
-        # for x in get_features(x_train[indices]):
-        #     a2b.append(x[0]),b2a.append(x[1]),b2revb.append(x[2]),f_bonds.append(x[3]),f_atoms.append(x[4]),bond_sum.append(x[5])
-        a2b, b2a, b2revb, f_bonds, f_atoms, bond_sum = solubility_pp(x_train[indices][0])
+
+        a2b, b2a, b2revb, f_bonds, f_atoms, bond_sum = solubility_pp(x_train[indices])
+
         batch_y = torch.FloatTensor(np.array([y_train[indices]]))
         
         outputs = model.forward(a2b, b2a, b2revb, f_bonds, f_atoms, bond_sum)
-            # print(x_train[indices])
-        loss = loss_fn(outputs, batch_y[0])
 
+        loss = loss_fn(outputs, batch_y)
+        if ctr % 100 == 0:
+            print("ctr =", ctr, "loss =", loss)
+        ctr += 1
         loss.backward()
         optimizer.step()
