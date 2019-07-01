@@ -3,14 +3,15 @@ from rdkit import Chem
 import numpy as np
 import torch
 import pdb
+import unittest
  
 def solubility_pp(smiles):
     mol = Chem.MolFromSmiles(smiles)
-    f_atoms = []  # mapping from atom index to atom features
-    f_bonds = []  # mapping from bond index to concat(in_atom, bond) features
-    a2b = []  # mapping from atom index to incoming bond indices
-    b2a = []  # mapping from bond index to the index of the atom the bond is coming from```
-    b2revb = []
+    f_atoms = [[0] * 149]  # mapping from atom index to atom features
+    f_bonds = [[0] * 158]  # mapping from bond index to concat(in_atom, bond) features
+    a2b = [[]]  # mapping from atom index to incoming bond indices
+    b2a = [0]  # mapping from bond index to the index of the atom the bond is coming from```
+    b2revb = [0]
     max_num = 115
     atomic_num = list(range(max_num))
     degree = [0, 1, 2, 3, 4, 5]
@@ -83,14 +84,12 @@ def solubility_pp(smiles):
 
     for g, atom in enumerate(mol.GetAtoms()):
         f_atoms.append(atom_features(atom))
-    f_atoms = [f_atoms[g] for g in range(mol.GetNumAtoms())]
 
     bond_index = 1
 
     for x1 in range(mol.GetNumAtoms()):
         for x2 in range(x1 + 1, mol.GetNumAtoms()):
             bond = mol.GetBondBetweenAtoms(x1, x2)
-
             if bond is None:
                 continue
 
@@ -102,29 +101,28 @@ def solubility_pp(smiles):
             y1 = bond_index 
             y2 = y1 + 1
 
-            a2b[x1].append(y1)
-            a2b[x2].append(y2)
+            a2b[x1+1].append(y1)
+            a2b[x2+1].append(y2)
 
             b2a.append(x1)
             b2a.append(x2)
             bond_index += 2
     b = 0
-
-
-    for x in range(int(len(f_bonds)/2)):
+    vals = range(int((len(f_bonds)-1)/2))
+    for x in vals:
         a = b+1
         b2revb.append(a)
         b2revb.append(b)
         b += 2
 
-    f_atoms = torch.LongTensor(f_atoms)
-    f_bonds = torch.LongTensor(f_bonds)
+    f_atoms = torch.FloatTensor(f_atoms)
+    f_bonds = torch.FloatTensor(f_bonds)
     b2a = torch.LongTensor(b2a)
     b2revb = torch.LongTensor(b2revb)
 
     max1 = 0
     bond_sum = [0]* 158
-    bond_sum = torch.LongTensor(bond_sum)
+    bond_sum = torch.FloatTensor(bond_sum)
 
     for list2 in a2b:
         if len(list2) > max1:
@@ -135,7 +133,18 @@ def solubility_pp(smiles):
            a2b[i] = list2 + [0] * (max1-len(list2))
 
     a2b = torch.LongTensor(a2b)
-    # print(b2revb)
-
     return a2b, b2a, b2revb, f_bonds, f_atoms, bond_sum
 
+solubility_pp("C=C")
+class TestStringMethods(unittest.TestCase):
+    def test_carbon_covalent(self):
+        a2b, b2a, b2revb, f_bonds, f_atoms, bond_sum = solubility_pp("C=C")
+        self.assertEqual(a2b.shape,(3,1))
+        self.assertEqual(b2a.shape,(1,3))
+        self.assertEqual(b2revb.shape,(1,3))
+        self.assertEqual(f_bonds.shape, (3,149))
+        self.assertEqual(f_atoms.shape, (3,149))
+        self.assserEqual(bond_sum.shape,(1,158))
+
+if __name__ == '__main__':
+    unittest.main()
