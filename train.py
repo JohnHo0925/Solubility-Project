@@ -18,7 +18,7 @@ y_test = torch.FloatTensor(np.array([y_test]))[0]
 def get_features(x):
     return [solubility_pp(e) for e in x]
 
-model = GCN() 
+model = GCN().cuda()
 
 loss_fn = torch.nn.MSELoss()
 
@@ -84,5 +84,5 @@ for epoch in range(n_epochs):
                 'loss': loss,
                 }, "checkpoint" + str(epoch))
         except:
-            print(x_train[indices])
+            pass
 

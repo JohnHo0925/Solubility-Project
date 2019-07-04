@@ -140,11 +140,11 @@ class TestStringMethods(unittest.TestCase):
     def test_carbon_covalent(self):
         a2b, b2a, b2revb, f_bonds, f_atoms, bond_sum = solubility_pp("C=C")
         self.assertEqual(a2b.shape,(3,1))
-        self.assertEqual(b2a.shape,(1,3))
-        self.assertEqual(b2revb.shape,(1,3))
-        self.assertEqual(f_bonds.shape, (3,149))
+        self.assertEqual(b2a.shape,(torch.Size([3])))
+        self.assertEqual(b2revb.shape,(torch.Size([3])))
+        self.assertEqual(f_bonds.shape, (3,158))
         self.assertEqual(f_atoms.shape, (3,149))
-        self.assserEqual(bond_sum.shape,(1,158))
+        self.assertEqual(bond_sum.shape,(torch.Size([158])))
 
 if __name__ == '__main__':
     unittest.main()
